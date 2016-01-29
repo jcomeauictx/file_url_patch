@@ -1,4 +1,7 @@
-SAFARI=/Applications/MobileSafari.app/MobileSafari
+#!/bin/bash -e
+# requires coreutils 6.9-12 for `dd`
+# requires developer-cmds 48-2 for `hexdump`
+SAFARI=${SAFARI:-/Applications/MobileSafari.app/MobileSafari}
 OFFSET_0=0x21f3c
 OFFSET_1=0x221e8
 EXISTING_0=$(hexdump -v -s $OFFSET_0 -n 4 -e '"\\\x" 1/1 "%02x"' $SAFARI)
@@ -9,26 +12,32 @@ UNPATCHED_1='\x0e\x00\x00\x0a'
   PATCHED_1='\x0e\x00\x00\xea'
 if [ -z "$1" ]; then
  echo 'Usage: patchsafari {patch | restore}' >&2
+ exit 1
 elif [ "$1" = "patch" ]; then
- if [ "$EXISTING_0" = "$UNPATCHED_0" -a "$EXISTING_1" = "$UNPATCHED_1" ]; then
-  echo -n -e $PATCHED_0 | \
-   dd bs=1 skip=$(printf %d $OFFSET_0) count=4 conv=notrunc of=$SAFARI
-  echo -n -e $PATCHED_1 | \
-   dd bs=1 skip=$(printf %d $OFFSET_1) count=4 conv=notrunc of=$SAFARI
-  echo MobileSafari patched to allow '"file:///"' URLs. >&2
- else
-  echo Already patched, or wrong version >&2
-  exit 1
- fi
+ EXPECTED_0=$UNPATCHED_0
+ NEW_0=$PATCHED_0
+ EXPECTED_1=$UNPATCHED_1
+ NEW_1=$PATCHED_1
+ SUCCESS='MobileSafari patched to allow "file:///" URLs'
+ STATE=patched
 elif [ "$1" = "restore" ]; then
- if [ "$EXISTING_0" = "$PATCHED_0" -a "$EXISTING_1" = "$PATCHED_1" ]; then
-  echo -n -e $UNPATCHED_0 | \
-   dd bs=1 skip=$(printf %d $OFFSET_0) count=4 conv=notrunc of=$SAFARI
-  echo -n -e $UNPATCHED_1 | \
-   dd bs=1 skip=$(printf %d $OFFSET_1) count=4 conv=notrunc of=$SAFARI
-  echo MobileSafari restored to original version 1.1.4. >&2
- else
-  echo Already restored, or wrong version >&2
-  exit 1
- fi
+ EXPECTED_0=$PATCHED_0
+ NEW_0=$UNPATCHED_0
+ EXPECTED_1=$PATCHED_1
+ NEW_1=$UNPATCHED_1
+ SUCCESS='MobileSafari restored to original version 1.1.4.'
+ STATE=restored
+else
+ echo Unknown action: $1 >&2
+ exit 1
+fi
+if [ "$EXISTING_0" = "$EXPECTED_0" -a "$EXISTING_1" = "$EXPECTED_1" ]; then
+ echo -n -e $NEW_0 | \
+  dd bs=1 seek=$(printf %d $OFFSET_0) count=4 conv=notrunc of=$SAFARI
+ echo -n -e $NEW_1 | \
+  dd bs=1 seek=$(printf %d $OFFSET_1) count=4 conv=notrunc of=$SAFARI
+ echo $SUCCESS >&2
+else
+ echo Already $STATE, or wrong version >&2
+ exit 1
 fi
