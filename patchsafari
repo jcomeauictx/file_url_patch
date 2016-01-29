@@ -1,0 +1,34 @@
+SAFARI=/Applications/MobileSafari.app/MobileSafari
+OFFSET_0=0x21f3c
+OFFSET_1=0x221e8
+EXISTING_0=$(hexdump -v -s $OFFSET_0 -n 4 -e '"\\\x" 1/1 "%02x"' $SAFARI)
+EXISTING_1=$(hexdump -v -s $OFFSET_1 -n 4 -e '"\\\x" 1/1 "%02x"' $SAFARI)
+UNPATCHED_0='\x00\x40\xa0\x13'
+  PATCHED_0='\x04\x40\xa0\xe1'
+UNPATCHED_1='\x0e\x00\x00\x0a'
+  PATCHED_1='\x0e\x00\x00\xea'
+if [ -z "$1" ]; then
+ echo 'Usage: patchsafari {patch | restore}' >&2
+elif [ "$1" = "patch" ]; then
+ if [ "$EXISTING_0" = "$UNPATCHED_0" -a "$EXISTING_1" = "$UNPATCHED_1" ]; then
+  echo -n -e $PATCHED_0 | \
+   dd bs=1 skip=$(printf %d $OFFSET_0) count=4 conv=notrunc of=$SAFARI
+  echo -n -e $PATCHED_1 | \
+   dd bs=1 skip=$(printf %d $OFFSET_1) count=4 conv=notrunc of=$SAFARI
+  echo MobileSafari patched to allow '"file:///"' URLs. >&2
+ else
+  echo Already patched, or wrong version >&2
+  exit 1
+ fi
+elif [ "$1" = "restore" ]; then
+ if [ "$EXISTING_0" = "$PATCHED_0" -a "$EXISTING_1" = "$PATCHED_1" ]; then
+  echo -n -e $UNPATCHED_0 | \
+   dd bs=1 skip=$(printf %d $OFFSET_0) count=4 conv=notrunc of=$SAFARI
+  echo -n -e $UNPATCHED_1 | \
+   dd bs=1 skip=$(printf %d $OFFSET_1) count=4 conv=notrunc of=$SAFARI
+  echo MobileSafari restored to original version 1.1.4. >&2
+ else
+  echo Already restored, or wrong version >&2
+  exit 1
+ fi
+fi
