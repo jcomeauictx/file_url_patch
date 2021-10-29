@@ -1,0 +1,25 @@
+jcomeau@aspire:~/rentacoder/jcomeau/patchsafari$ ssh wanderer patchsafari
+Usage patchsafari {patch | restore}
+jcomeau@aspire:~/rentacoder/jcomeau/patchsafari$ ssh wanderer patchsafari patch
+No matching processes were found
+Patch 00021f3f: 13a04000 -> e1a04004
+Patching /Applications/MobileSafari.app/MobileSafari
+Mismatch at 00021f3f: got e1a04004 instead of 13a04000
+jcomeau@aspire:~/rentacoder/jcomeau/patchsafari$ ssh wanderer patchsafari restore
+No matching processes were found
+Patch 00021f3f: e1a04004 -> 13a04000
+Patch 000221e8: ea00000e -> 0a00000e
+Patching /Applications/MobileSafari.app/MobileSafari
+Done
+jcomeau@aspire:~/rentacoder/jcomeau/patchsafari$ scp wanderer:/var/stash/Applications.HoDH7u/MobileSafari.app/MobileSafari /tmp/MobileSafari.unpatched
+MobileSafari                                  100%  444KB 443.8KB/s   00:01    
+jcomeau@aspire:~/rentacoder/jcomeau/patchsafari$ xxd /tmp/MobileSafari.unpatched /tmp/MobileSafari.unpatched.xxd
+jcomeau@aspire:~/rentacoder/jcomeau/patchsafari$ diff /tmp/Mob*xxd
+8692c8692
+< 0021f30: 0010 91e5 35e0 00eb ff00 10e3 0040 a013  ....5........@..
+---
+> 0021f30: 0010 91e5 35e0 00eb ff00 10e3 0440 a0e1  ....5........@..
+8735c8735
+< 00221e0: 8adf 00eb ff00 10e3 0e00 000a d013 9fe5  ................
+---
+> 00221e0: 8adf 00eb ff00 10e3 0e00 00ea d013 9fe5  ................

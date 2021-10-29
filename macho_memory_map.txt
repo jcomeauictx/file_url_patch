@@ -1,0 +1,13 @@
+from https://www.trailofbits.com/resources/let_your_macho_fly_paper.pdf
+
+on program entry, stack pointer has the "macho-o address"
+followed by argc
+followed by argv[]
+followed by 0
+followed by envp[]
+followed by 0
+followed by exec_path_ptr
+followed by 0
+followed by exec_path
+followed by argv[] strings
+followed by envp[] strings
